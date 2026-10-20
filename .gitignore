@@ -1,0 +1,12 @@
+*.iml
+.gradle/
+.kotlin/
+**/build/
+local.properties
+app/google-services.json
+app/src/main/assets/model-en-us/
+*.jks
+*.keystore
+.env
+captures/
+.model-cache/

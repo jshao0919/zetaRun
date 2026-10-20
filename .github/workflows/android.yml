@@ -1,0 +1,44 @@
+name: Android checks and debug APK
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+      - uses: actions/cache@v4
+        with:
+          path: app/src/main/assets/model-en-us
+          key: vosk-official-2021-04-70b354708afbbbe8
+      - name: Prepare verified offline model
+        run: ./scripts/prepare-model.sh
+      - name: Test, lint, and build
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug
+      - name: Check native and ZIP alignment
+        run: |
+          python3 scripts/check_apk.py app/build/outputs/apk/debug/app-debug.apk
+          "$ANDROID_HOME/build-tools/36.0.0/zipalign" -c -P 16 4 app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZetaRun-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Android-check-results
+          path: |
+            app/build/reports/tests/testDebugUnitTest
+            app/build/reports/lint-results-debug.html
