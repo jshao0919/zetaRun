@@ -15,7 +15,29 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: android-actions/setup-android@v3
+      - name: Prepare verified Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_dir="$RUNNER_TEMP/zetarun-android-sdk"
+          cli_archive="$RUNNER_TEMP/zetarun-android-cli.zip"
+          curl --fail --location --retry 3 --proto '=https' --proto-redir '=https' \
+            https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+            -o "$cli_archive"
+          printf '%s  %s\n' '5fdcc763663eefb86a5b8879697aa6088b041e70' "$cli_archive" | sha1sum --check
+          mkdir -p "$sdk_dir/cmdline-tools" "$RUNNER_TEMP/zetarun-android-cli"
+          unzip -q "$cli_archive" -d "$RUNNER_TEMP/zetarun-android-cli"
+          mv "$RUNNER_TEMP/zetarun-android-cli/cmdline-tools" "$sdk_dir/cmdline-tools/19.0"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk_dir" "$sdk_dir" >> "$GITHUB_ENV"
+          printf '%s\n' "$sdk_dir/cmdline-tools/19.0/bin" "$sdk_dir/platform-tools" >> "$GITHUB_PATH"
+          python3 - "$sdk_dir" <<'PY'
+          import subprocess, sys
+          sdk = sys.argv[1]
+          subprocess.run(
+              [sdk + "/cmdline-tools/19.0/bin/sdkmanager", "--sdk_root=" + sdk, "--licenses"],
+              input="y\n" * 200, text=True, check=True,
+          )
+          PY
       - uses: gradle/actions/setup-gradle@v4
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
