@@ -6,6 +6,8 @@ Solve a stream of arithmetic problems by speaking the answer. The default round 
 
 ## Build and run
 
+For an already-built APK, open [GitHub Actions](https://github.com/jshao0919/zetaRun/actions/workflows/android.yml), select a successful run, and download **ZetaRun-debug** under **Artifacts**. Sign in to GitHub if prompted, extract the ZIP, and install `app-debug.apk` on your phone. If an artifact has expired, run the workflow again. [Download the source ZIP](https://github.com/jshao0919/zetaRun/archive/refs/heads/main.zip) to build locally.
+
 You need Android Studio, JDK 17 or 21, Python 3 for model preparation, Android SDK Platform 36 and build tools, and a 64-bit Android 8.0+ device. The S24 Ultra is supported. The app targets Android 16 (API 36). The Gradle wrapper defines the build-tool version.
 
 ```bash
@@ -25,7 +27,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Follow [S24 Ultra testing](docs/S24_ULTRA.md) for USB setup, installation, and a voice-validation checklist. Follow [Firebase setup](docs/FIREBASE.md) to enable Google login and cloud progress. The app remains usable locally until that setup is complete.
 
-If you received a source ZIP, extract and open that project directly. Cloud workspace changes are not automatically pushed to GitHub. Once this code is pushed, the included GitHub Actions workflow runs the checks and produces a downloadable debug APK; the workflow itself has not been run on GitHub during development.
+If you received a source ZIP, extract and open that project directly. Cloud workspace changes are not automatically pushed to GitHub; the completed project was pushed after the owner authorized GitHub delivery. The included GitHub Actions workflow runs the checks and produces a downloadable debug APK.
 
 ## Use the app
 
