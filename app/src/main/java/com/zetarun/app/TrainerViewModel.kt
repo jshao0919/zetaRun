@@ -94,7 +94,7 @@ class TrainerViewModel(application: Application) : AndroidViewModel(application)
     private fun startListening() = voice.start(viewModelScope, ::onVoice)
 
     private fun onVoice(hypothesis: VoiceHypothesis) {
-        if (mutableState.value.stage != Stage.RUNNING || hypothesis.utteranceId == lastHandledUtterance) return
+        if (mutableState.value.stage != Stage.RUNNING || hypothesis.utteranceId <= lastHandledUtterance) return
         val text = hypothesis.text.trim().lowercase()
         mutableState.update { it.copy(heard = text) }
         // Commands require the same endpoint gate as numeric answers.

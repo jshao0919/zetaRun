@@ -6,7 +6,7 @@ The goal is to choose the quickest profile that accepts complete answers reliabl
 
 Measure from the **audible end of the complete spoken answer** to the **first visible frame of the next problem**. This is the delay you perceive while using the app. Time spent solving the problem is excluded. In the constant-answer diagnostic below, consecutive problems look identical, so use the first visible **score increment** instead and label that measurement accordingly.
 
-The app's **Approx. endpoint delay** is a diagnostic interval measured after the last energetic audio frame or changed recognition text. It is not an end-to-end measurement: capture buffering, decoder work, callback scheduling, and screen presentation can add time outside it. A final result can also take a different path from the partial-result silence check. The results screen's mean response time includes solving time and cannot substitute for this benchmark.
+The app's **Approx. endpoint delay** is a diagnostic interval based on internal speech/decoder timing. It is not an end-to-end measurement: capture buffering, speech detection, decoder work, callback scheduling, and screen presentation can add time outside it. A final result can also take a different path from the partial-result silence check. The results screen's mean response time includes solving time and cannot substitute for this benchmark.
 
 | Profile | Configured silence check | What to compare |
 | --- | --- | --- |
@@ -15,6 +15,8 @@ The app's **Approx. endpoint delay** is a diagnostic interval measured after the
 | Careful | 450 ms | Whether added pause tolerance reduces premature submissions enough to justify the delay. |
 
 These settings express a tradeoff, not measured latencies or guaranteed minimum/maximum response times. A pause within a number can look like the end of an utterance in any profile.
+
+Noise filtering runs automatically in every profile: an 80 Hz high-pass filter, Android noise suppression when available, and local Silero speech detection precede answer acceptance. At least two strong 32 ms frames provide sustained speech evidence; the app should collect that evidence during the word rather than add 64 ms after the answer ends. Final words also pass a confidence check. Measure both noise rejection and short-answer acceptance so a stricter filter cannot appear successful merely by rejecting everything. The detector does not verify the speaker's identity.
 
 ## A repeatable setup
 
@@ -34,6 +36,16 @@ Allow the model to finish preparing. Do a short warm-up round, then collect a me
 
 An intentionally paced constant-answer round is a diagnostic, not a meaningful progress score. Its records can be exported and then removed with disposable test history if you prefer a clean training history.
 
+## A quick breath and noise check
+
+Before the longer comparison, run these three checks on Balanced with the phone in its normal treadmill position. Keep the camera on the score, feedback, and timer. Use disposable test rounds so exported attempts are easy to inspect.
+
+1. **Noise without speech:** during a 30-second round, breathe normally, then take several heavier breaths; include fan noise and normal footsteps without speaking any numbers or commands. The expected result is zero score, zero attempts, no changed problem, and no unexpected skip or pause. Export the record from Account to confirm attempts stayed at zero—an unchanged score alone can hide rejected answers counted as incorrect. Repeat with the fan off to separate breathing from steady noise.
+2. **Short words:** set addition ranges to `1–1` and `1–1` for “two,” then `3–3` and `3–3` for “six.” Try ten complete answers at normal volume and ten softly spoken but natural answers for each word. Wait for a score increment between answers. Record misses, double counts, and delay. Avoid relying only on long words, which supply more speech evidence than a short number.
+3. **Answer followed by breath:** compare ten normal “two” answers followed by quiet with ten followed immediately by a clear exhale. Keep your speaking pace and position the same. Time from the audible end of “two,” not the end of the exhale. A breath classified as non-speech should not restart the endpoint wait or trigger another submission. Compare the delay distributions and inspect individual slow cases; a larger systematic delay needs investigation rather than being explained away as the configured profile.
+
+Repeat the check with your actual headset. Note the microphone route and whether music contains speech. Nearby people and spoken media can resemble valid user speech; that is a separate condition from breath or fan rejection.
+
 ## Challenge the edge cases
 
 Use the custom ranges to make a known answer repeat. For example, addition `1–1` plus `1–1` always expects 2; `10–10` plus `10–10` always expects 20. Speak deliberately wrong and ambiguous phrases to check whether they advance the current question.
@@ -45,17 +57,20 @@ Use the custom ranges to make a known answer repeat. For example, addition `1–
 | Repeated expected 2 | One “two” scores once; the next question needs a fresh utterance. Replayed or final callbacks must not add a second score. |
 | “Two … no, twenty,” unrelated speech, or two answers in one breath | No silent reinterpretation as an intended correct answer; note any accidental advance. Rephrase as one complete answer to recover. |
 | Four/“for,” two/“to,” eight/“ate” | Similar-sounding words can be acoustically indistinguishable. Record how incidental conversation affects false accepts; spelling cannot be inferred from identical audio. |
-| Coughs, heavy breathing, fan, footsteps, music, nearby speech | Count advances without an intended answer. Audio energy is not proof that the user spoke a number. |
+| Breathing, fan rumble, footsteps, or coughs without words | Expect no advance, incorrect attempt, skip, or pause. Export attempts to detect failures hidden by an unchanged score. |
+| Soft, short “two” and “six” | Complete short answers still register once; sustained-speech filtering must not hide misses. |
+| Answer immediately followed by an exhale | Measure from the end of the word. Filtered breathing should not extend the endpoint clock or become a second answer. |
+| Music, nearby speech, and spoken media | Count accidental answers and commands separately. Speech activity is not speaker verification. |
 | Say “pause,” then resume; say “skip” | Each command runs once. The paused timer and microphone stay stopped. |
 | Switch apps, lock screen, or receive a call | Capture and timer pause; resuming does not submit a stale answer. |
 | Deny permission, then use Keypad | A clear permission/error state appears and manual training remains available. |
 | Airplane mode | Offline voice and local history still work after model installation. Cloud sync can remain pending. |
 
-Also leave a live test round unanswered for 30 seconds with your usual treadmill noise and music. Any problem advance or score increment is a false accept and should be recorded. Do not use a word such as “pause” in the background soundtrack during this check unless testing command-trigger behavior deliberately.
+Also leave a live test round unanswered for 30 seconds with your usual treadmill noise and music. Any problem advance, score increment, incorrect attempt, skip, or pause should be recorded. Do not use a word such as “pause” in the background soundtrack during this check unless testing command-trigger behavior deliberately.
 
 ## Record the result
 
-Use one row per condition and profile. Count **premature** acceptance separately from **false** acceptance: the first clips an intended longer number; the second advances for a wrong answer or background sound.
+Use one row per condition and profile. Count **premature** acceptance separately from **false** acceptance: the first clips an intended longer number; the second advances for a wrong answer or background sound. In Notes, also count noise-triggered incorrect attempts and commands; these are failures even when the score does not increase.
 
 | Condition / mic / profile | Attempts | Complete answers accepted | Missed or >2 s | Premature accepts | False accepts | Median delay | P95 delay | Notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |

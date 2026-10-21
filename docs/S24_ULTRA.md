@@ -9,7 +9,7 @@ The debug APK has offline voice built in. Google sign-in becomes available after
 ## Install from Android Studio
 
 1. Install Android Studio on your computer and open the `zetaRun` project. Let it install the SDK components requested by Gradle. Use the project's Gradle JDK setting; Android Studio's bundled compatible JDK is usually the easiest choice.
-2. Install Python 3 if needed. From the project directory, run `./scripts/prepare-model.sh`, then sync Gradle. This verifies and extracts the English model from an official pinned Vosk release archive, so no recognition download is needed on the phone.
+2. Install Python 3 if needed. From the project directory, run `./scripts/prepare-model.sh`, then sync Gradle. This verifies and prepares the pinned English recognition and Silero speech-detection models, so neither needs a download on the phone.
 3. On the phone, open **Settings → About phone → Software information**. Tap **Build number** seven times and enter your PIN when asked.
 4. Open **Settings → Developer options** and enable **USB debugging**. Connect a USB data cable and accept the phone's computer authorization prompt.
 5. Select the S24 Ultra in Android Studio and press **Run** for `app`. Allow microphone access while using the app when prompted.
@@ -39,7 +39,10 @@ Try the following cases across several rounds:
 | “Two,” “twenty,” “two hundred,” “one hundred and two” | A prefix must not prematurely answer a question when you are speaking a longer number. |
 | Several problems with the same answer | Each requires a fresh utterance; an old recognition callback must not score again. |
 | Repeat an answer, correct yourself, speak an unrelated phrase | No double score; ambiguous or irrelevant speech should not advance the question. |
-| Pause between words, cough, breathe heavily, turn on a fan | Watch for accidental submissions and missed answers. |
+| Breathe normally and heavily without saying an answer; add fan noise and footsteps | No advance, incorrect attempt, skip, or pause should be triggered. Check exported session attempts as well as the score. |
+| Say a soft, short “two” or “six,” then repeat at normal volume | Each complete answer should register once. Note missed short answers as well as noise rejection. |
+| Say an answer, then breathe out immediately | A filtered exhale should neither become another answer nor force the app to wait for breathing to stop. |
+| Pause between words in a long number | Compare prefix acceptance across the three profiles; a long pause can still resemble the end of an answer. |
 | Deny microphone access | Manual input remains usable and the app explains how to enable voice. |
 | Lock the phone, change apps, or receive a call | Microphone capture and the session timer pause; return and explicitly resume. |
 | Enable airplane mode after installation | Voice and local progress continue without network access. |
@@ -50,11 +53,13 @@ Test deletion controls only with disposable data. **Account → Delete all progr
 
 Test the phone microphone first. Bluetooth earbuds can change microphone routing and audio quality; repeat the same checks with your actual headphones. Do not assume the earbud microphone is being used merely because the earbuds are connected.
 
+Noise and breath filtering is automatic: the app applies a high-pass filter, uses Android noise suppression when available, and checks speech activity locally before accepting recognized candidates. There is no extra filter setting to enable. The filter distinguishes likely speech from noise, rather than verifying that a voice belongs to you, so also test nearby conversation or spoken media separately.
+
 ## Measure the treadmill experience
 
 Secure the phone where the question is readable, then repeat a two-minute round with the treadmill and fan at your usual settings. Keep the same arithmetic ranges while comparing runs. Compare **Fast** (180 ms silence check), **Balanced** (300 ms), and **Careful** (450 ms). These values tune the pause tolerance; they are not a promise of answer-to-screen latency.
 
-Follow [the voice benchmark](VOICE_BENCHMARK.md) to measure answer-to-screen delay, missed answers, premature submissions, and noise-triggered advances. The UI's **Approx. endpoint delay** measures an internal silence/decoder interval; it excludes parts of capture, decoding, scheduling, and display. **Mean response time** in results includes solving time and is not a speech-recognition benchmark. The cloud build environment cannot establish S24 Ultra microphone accuracy or real-device latency.
+Follow [the voice benchmark](VOICE_BENCHMARK.md) to measure answer-to-screen delay, missed answers, premature submissions, and noise-triggered attempts or advances. It includes a short breath/fan check and an answer-followed-by-exhale comparison to catch added delay. The UI's **Approx. endpoint delay** measures an internal speech/decoder interval; it excludes parts of capture, decoding, scheduling, and display. **Mean response time** in results includes solving time and is not a speech-recognition benchmark. The cloud build environment cannot establish S24 Ultra microphone accuracy or real-device latency.
 
 ## Google login
 

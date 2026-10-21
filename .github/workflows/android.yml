@@ -45,7 +45,7 @@ jobs:
         with:
           path: app/src/main/assets/model-en-us
           key: vosk-official-2021-04-70b354708afbbbe8
-      - name: Prepare verified offline model
+      - name: Prepare verified offline models
         run: ./scripts/prepare-model.sh
       - name: Test, lint, and build
         run: ./gradlew testDebugUnitTest lintDebug assembleDebug

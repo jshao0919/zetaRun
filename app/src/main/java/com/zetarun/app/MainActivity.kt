@@ -407,7 +407,7 @@ private fun ZetaRunApp(vm: TrainerViewModel = viewModel()) {
         OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.FileDownload, null); Spacer(Modifier.width(8.dp)); Text("Export progress as JSON") }
         TextButton(onClick = { confirm = "progress" }, modifier = Modifier.fillMaxWidth()) { Text("Delete all progress", color = MaterialTheme.colorScheme.error) }
         if (auth.userId != null) TextButton(onClick = { confirm = "account" }, modifier = Modifier.fillMaxWidth()) { Text("Delete account & cloud data", color = MaterialTheme.colorScheme.error) }
-        Text("ZetaRun 0.1.0 · independent arithmetic trainer\nInspired by Zetamac. Not affiliated with Zetamac.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(vertical = 22.dp))
+        Text("ZetaRun ${BuildConfig.VERSION_NAME} · independent arithmetic trainer\nInspired by Zetamac. Not affiliated with Zetamac.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(vertical = 22.dp))
     }
     if (confirm.isNotEmpty()) AlertDialog(onDismissRequest = { confirm = "" },
         title = { Text(if (confirm == "account") "Delete your account?" else "Delete all progress?") },

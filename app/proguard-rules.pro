@@ -1,3 +1,4 @@
 -keep class org.vosk.** { *; }
 -keep class com.sun.jna.** { *; }
+-keep class ai.onnxruntime.** { *; }
 -dontwarn java.awt.**

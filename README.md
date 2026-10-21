@@ -17,7 +17,7 @@ cd zetaRun
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-The model preparation script extracts the US English model from the official Vosk Android demo's pinned `2021-04` release archive and verifies its SHA-256 before extraction. It uses the model distributed in that release, rather than claiming to bundle the latest model. It is needed before the first build and does not require a Firebase project. Keep the generated model out of Git. Gradle, SDK, and model downloads require an Internet connection; recognition in an installed app does not.
+The model preparation script extracts the US English model from the official Vosk Android demo's pinned `2021-04` release archive and prepares the pinned Silero voice-activity model. Both downloads are checked against their SHA-256 values. The speech model is the one distributed in that release, rather than a claim to bundle the latest model. Model preparation is needed before the first build and does not require a Firebase project. Keep the generated models out of Git. Gradle, SDK, and model downloads require an Internet connection; recognition and speech detection in an installed app do not.
 
 Open the project in Android Studio, let Gradle sync, select your phone, and run the `app` configuration. Or install the generated APK:
 
@@ -37,11 +37,15 @@ If you received a source ZIP, extract and open that project directly. Cloud work
 
 ## Voice behavior
 
-The app uses an English number vocabulary and short audio frames to avoid network round trips. It waits for a stable recognition candidate and a short quiet interval before considering a partial answer. Final recognition results provide a second route to submission. An utterance is consumed once so a repeated callback cannot answer the next problem.
+The app uses an English number vocabulary and short audio frames to avoid network round trips. Automatic filtering combines an 80 Hz high-pass filter, Android noise suppression when supported by the device, and on-device Silero speech detection. A candidate needs sustained speech evidence—at least two strong 32 ms frames—before it can count as an answer or command. This evidence is collected while you speak; it is not another fixed wait added after a complete answer. Final recognition results also pass a word-confidence check.
+
+The app waits for a stable recognition candidate and a short quiet interval before considering a partial answer. Final recognition results provide a second route to submission. An utterance is consumed once so a repeated callback cannot answer the next problem. The filters run automatically; no extra settings or online service are required, and audio is neither saved nor uploaded.
 
 Choose **Fast** (180 ms), **Balanced** (300 ms, default), or **Careful** (450 ms) on Train. These are configured silence checks, not measured total latency. Fast can feel more responsive but is more likely to split a slowly spoken number; Careful allows longer pauses between words. Start with Balanced and compare using [the voice benchmark](docs/VOICE_BENCHMARK.md).
 
-These checks reduce premature acceptance of phrases such as “one hundred” and confusion between “two” and “twenty.” They cannot remove all recognition mistakes. Fan noise, breath, speech pace, phone placement, and Bluetooth routing affect accuracy and latency. A quiet interval trades some speed for fewer accidental answers. No end-to-end latency or S24 Ultra accuracy claim is made until measured on that device.
+These checks are designed to keep breaths, fan rumble, and footsteps from becoming answers, incorrect attempts, or commands while preserving short spoken numbers. The quiet interval helps avoid accepting a prefix of “one hundred”; recognition can still confuse “two” and “twenty.” To prevent weak noise from keeping an old speech onset alive, acoustic proof expires after 1.2 seconds without renewed strong speech evidence; a very soft, long phrase may need repeating. Speech detection does not identify who is speaking, so another person's voice or spoken music can still matter. Check soft “two” and “six,” breathing after an answer, and normal treadmill noise with [the physical-device benchmark](docs/VOICE_BENCHMARK.md). No end-to-end latency or S24 Ultra accuracy claim is made until measured on that device.
+
+The [synthetic noise comparison](docs/NOISE_VALIDATION.md) admitted all 84 speech clips and rejected all 11 noise-only clips at the speech-qualification stage. It also records recognition failures under heavy fan noise; these results are not a measurement of accepted answers on a treadmill.
 
 Use the manual answer control when speech cannot hear you reliably. Microphone permission is required only for voice input. Backgrounding the app automatically pauses both microphone capture and the timer; resume the session from the app when ready.
 

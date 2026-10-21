@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import java.security.MessageDigest
 
 plugins {
     id("com.android.application")
@@ -30,8 +31,8 @@ android {
         minSdk = 26
         targetSdk = 36
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("boolean", "FIREBASE_CONFIGURED", firebaseFile.exists().toString())
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"$webClientId\"")
@@ -43,7 +44,7 @@ android {
     buildTypes {
         release { isMinifyEnabled = true; proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro") }
     }
-    androidResources { noCompress += listOf("mdl", "fst", "int", "txt", "conf") }
+    androidResources { noCompress += listOf("mdl", "fst", "int", "txt", "conf", "onnx") }
     packaging { jniLibs { useLegacyPackaging = false }; resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     testOptions { unitTests.isReturnDefaultValues = true }
 }
@@ -52,6 +53,12 @@ val verifyVoiceModel by tasks.registering {
     doLast {
         check(file("src/main/assets/model-en-us/am/final.mdl").isFile) {
             "The offline English model is missing. Run ./scripts/prepare-model.sh from the repository root."
+        }
+        val vad = file("src/main/assets/silero-vad.onnx")
+        check(vad.isFile && MessageDigest.getInstance("SHA-256")
+            .digest(vad.readBytes()).joinToString("") { "%02x".format(it) } ==
+            "1a153a22f4509e292a94e67d6f9b85e8deb25b4988682b7e174c65279d8788e3") {
+            "The verified speech detector is missing. Run ./scripts/prepare-model.sh from the repository root."
         }
     }
 }
@@ -71,6 +78,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.10.2")
     implementation("com.alphacephei:vosk-android:0.3.75@aar")
     implementation("net.java.dev.jna:jna:5.18.1@aar")
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.24.3")
     implementation(platform("com.google.firebase:firebase-bom:33.12.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")

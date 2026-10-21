@@ -5,8 +5,11 @@
 local.properties
 app/google-services.json
 app/src/main/assets/model-en-us/
+app/src/main/assets/silero-vad.onnx
 *.jks
 *.keystore
 .env
 captures/
 .model-cache/
+__pycache__/
+*.pyc
